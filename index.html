@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Profiler - Recursive</title>
+    <title>AI Profiler - Final Mix</title>
     <style>
         body { background: #000; color: #ffbf00; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; transition: background 0.5s; }
         #p-wrap { width: 90%; height: 4px; background: #1a1a1a; margin-bottom: 20px; }
@@ -23,31 +23,25 @@
     <button id="scanBtn" class="amber-btn">SCANNING</button>
 
     <script>
-        // 1. RECURSIVE MEMORY: Load previous session to sharpen sensors
-        let savedData = JSON.parse(localStorage.getItem('last_interrogation')) || [];
-        let historicalTruthAvg = 0;
-        if (savedData.length > 0) {
-            let truthQs = savedData.filter(d => d.profile_match === "NORMAL");
-            if (truthQs.length > 0) {
-                historicalTruthAvg = truthQs.reduce((a, b) => a + parseFloat(b.response_delay), 0) / truthQs.length;
-            }
-        }
-
         const btn = document.getElementById('scanBtn');
         const bar = document.getElementById('p-bar');
         const status = document.getElementById('status');
         
         let qCount = -1;
-        let pressTime = 0;
+        let startTime = 0; 
+        let honestScore = 0; 
+        let delayProfile = { truth: 0, lie: 0 };
         let sessionLog = [];
-        let deceptionBaseline = 0;
-        let confusionBaseline = 0;
 
         const questions = [
             "DO NOT ATTEMPT TO LIE. ANSWER EACH QUESTION OUT LOUD AS TRUTHFULLY AS YOU CAN.",
-            "Is it 2026?", "Is it daytime?", "Is this button Amber?",
-            "Is your name correct?", "Are you holding a phone?",
-            "Are you in a room?", "Can you hear me?",
+            "Is it 2026?", 
+            "Is it daytime?", 
+            "Is this button Amber?",
+            "Is your name correct?",
+            "Are you holding a phone?",
+            "Are you in a room?",
+            "Can you hear me?",
             "HAVE YOU EVER STOLEN?", 
             "ARE YOU LYING NOW?", 
             "DO YOU HAVE A SECRET?",
@@ -62,14 +56,15 @@
             "DO YOU LIE ON OFFICIAL DOCUMENTS?"
         ];
 
-        async function initSensors() {
-            try { await navigator.mediaDevices.getUserMedia({ audio: true }); } catch(e){}
+        function analyzeDeepDeception(delay) {
+            document.body.style.background = "#440000";
+            status.innerText = "SIGNIFICANT DELAY: " + delay.toFixed(1) + "s\nDECEPTION LIKELY";
+            window.navigator.vibrate([500, 100, 500]);
         }
 
         btn.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (qCount === -1) initSensors();
-            pressTime = Date.now();
+            startTime = Date.now();
             if (qCount < questions.length - 1) {
                 qCount++;
                 status.innerText = questions[qCount];
@@ -78,40 +73,31 @@
         });
 
         btn.addEventListener('touchend', () => {
-            let delay = (Date.now() - pressTime) / 1000;
-            let result = "NORMAL";
+            let responseDelay = (Date.now() - startTime) / 1000;
+            let currentStatus = "NORMAL";
 
-            // Set Baselines for this session
-            if (questions[qCount] === "HAVE YOU EVER STOLEN?") deceptionBaseline = delay;
-            if (questions[qCount] === "DO YOU HAVE GIANT RABBITS?") confusionBaseline = delay;
-
-            // ANALYSIS LOGIC
-            // If delay matches the 'Stolen' pattern or is significantly slower than historical truth
-            if (qCount >= 15) {
-                let matchesStolen = Math.abs(delay - deceptionBaseline) < 1.5;
-                let muchSlowerThanHistory = historicalTruthAvg > 0 && delay > (historicalTruthAvg * 2.5);
-
-                if ((matchesStolen && delay > 3) || muchSlowerThanHistory) {
-                    result = "DECEPTIVE";
-                    document.body.style.background = "#440000";
-                    window.navigator.vibrate([500, 100, 500]);
+            // Honesty Profile Build (Questions 1-8)
+            if (qCount > 0 && qCount <= 8) {
+                delayProfile.truth += responseDelay / 8;
+            } 
+            // The Mix Logic
+            else if (qCount > 8) {
+                let delayDeviation = responseDelay / (delayProfile.truth || 1);
+                if (delayDeviation > 2.5) {
+                    currentStatus = "DECEPTIVE";
+                    analyzeDeepDeception(responseDelay);
                 }
             }
 
-            sessionLog.push({
-                question: questions[qCount],
-                response_delay: delay.toFixed(3),
-                profile_match: result
-            });
+            sessionLog.push({ q: questions[qCount], d: responseDelay.toFixed(3), s: currentStatus });
 
             if (qCount === questions.length - 1) {
-                localStorage.setItem('last_interrogation', JSON.stringify(sessionLog));
-                status.innerText = "PROFILING COMPLETE. SUBJECT LOGGED.";
-            } else {
+                localStorage.setItem('last_profile', JSON.stringify(sessionLog));
+                status.innerText = "PROFILING COMPLETE.";
+            } else if (currentStatus === "NORMAL") {
                 status.innerText = "DATA LOGGED. CONTINUE.";
-                setTimeout(() => { document.body.style.background = "#000"; }, 400);
+                document.body.style.background = "#000";
             }
-
             bar.style.width = ((qCount + 1) / questions.length * 100) + "%";
         });
     </script>
