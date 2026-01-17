@@ -41,17 +41,35 @@
         ];
 
        const questions = [
-            "Is it 2026?", "Is the sky blue?", "Are you holding a phone?", // Baseline
-            "Do you like music?", "Is your name correct?", "Are you tired?",
-            "Is it daytime?", "Is the button Amber?", "Are you human?",
-            "HAVE YOU EVER STOLEN?", // First "Check"
-            // Intensity Level 2 (11-30)
-            "Have you ever lied to a teacher?", "Is there a secret in your pocket?",
-            "Do you trust me?", "Are you hiding your true feelings?",
-            "Have you ever broken a promise?", "Is your heart beating faster?",
-            "Are you sweating?", "Did you lie about your age before?",
-            // ... (Add more up to 50)
-            "DO YOU REGRET WHAT YOU DID?" // Final Wild Card
+            // PHASE 1: BASELINE (1-10) - Calm & Benign
+            "Is it 2026?", "Are you holding a phone?", "Is the sky blue?",
+            "Do you like music?", "Is your name correct?", "Is it daytime?",
+            "Is the button Amber?", "Are you human?", "Are you sitting down?",
+            "HAVE YOU EVER STOLEN ANY SMALL ITEM?",
+
+            // PHASE 2: PROBING (11-30) - Slight Tension
+            "Do you consider yourself an honest person?", "Have you ever lied to a teacher?",
+            "Are you hiding a secret right now?", "Do you trust your friends?",
+            "Have you ever broken a promise?", "Are you nervous about the next question?",
+            "Is your heart beating faster?", "Did you lie on Question 4?",
+            "Have you ever blamed someone else for your mistake?", "Is there someone you dislike?",
+            "Do you check your phone too often?", "Have you ever cheated in a game?",
+            "Do you think I can hear your thoughts?", "Are you sweating?",
+            "Have you ever kept a secret from your family?", "Is your hand shaking?",
+            "Do you like being in control?", "Have you ever pretended to be sick?",
+            "Are you afraid of failing?", "HAVE YOU EVER TOLD A LIE THAT HURT SOMEONE?",
+
+            // PHASE 3: DEEP PRESSURE (31-50) - High Intensity
+            "Why is your pulse rising?", "Are you ashamed of something you've done?",
+            "Do you think you are a good person?", "Have you ever betrayed a trust?",
+            "Are you lying to yourself right now?", "What is the secret you'll never tell?",
+            "Do you feel guilty about your past?", "Are you afraid of the truth?",
+            "Have you ever taken something that wasn't yours?", "Is your breathing irregular?",
+            "Do you regret a choice you made recently?", "Are you hiding your true identity?",
+            "Is someone watching you?", "Do you feel trapped?",
+            "Have you ever wished you were someone else?", "Are you faking your confidence?",
+            "Do you think I am getting closer to the truth?", "Is your baseline failing?",
+            "ARE YOU PREPARED FOR THE CONSEQUENCES?", "DID YOU LIE TO ME TODAY?"
         ];
         let qCount = 0;
         let introIdx = 0;
