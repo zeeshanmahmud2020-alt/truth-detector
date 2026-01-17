@@ -1,30 +1,119 @@
-let startTime = 0;
-let honestScore = 0;
-let delayProfile = { truth: 0, lie: 0 };
-
-// The "Mix" Module: Delay + Voice + Tremor
-function processResponse(vocalPitch, currentTremor) {
-    let responseDelay = (Date.now() - startTime) / 1000; // Time in seconds
-    
-    if (qCount <= 8) {
-        // Build the "Honesty Profile"
-        delayProfile.truth += responseDelay / 8; 
-    } else {
-        // Apply your logic: Check for significant deviation from the baseline delay
-        let delayDeviation = responseDelay / delayProfile.truth;
-
-        if (delayDeviation > 2.5) { // If they take 2.5x longer than usual
-            analyzeDeepDeception(responseDelay, vocalPitch);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Profiler - Recursive</title>
+    <style>
+        body { background: #000; color: #ffbf00; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; transition: background 0.5s; }
+        #p-wrap { width: 90%; height: 4px; background: #1a1a1a; margin-bottom: 20px; }
+        #p-bar { width: 0%; height: 100%; background: #ffbf00; box-shadow: 0 0 15px #ffbf00; transition: 0.3s; }
+        #status { font-size: 1rem; text-align: center; height: 120px; padding: 0 25px; text-transform: uppercase; line-height: 1.4; }
+        .amber-btn {
+            width: 260px; height: 260px; background: #000; border: 3px solid #ffbf00; border-radius: 50%;
+            color: #ffbf00; font-weight: 900; font-size: 1.2rem; transition: 0.1s;
+            box-shadow: 0 0 20px rgba(255,191,0,0.1); outline: none; -webkit-tap-highlight-color: transparent;
         }
-    }
-}
+        .amber-btn:active { box-shadow: 0 0 80px #ffbf00, inset 0 0 40px #ffbf00; transform: scale(0.96); }
+    </style>
+</head>
+<body>
+    <div id="p-wrap"><div id="p-bar"></div></div>
+    <div id="status">ANALYZER READY<br>PLACE THUMB</div>
+    <button id="scanBtn" class="amber-btn">SCANNING</button>
 
-// Logic for your specific questions
-const questions = [
-    "Is it daytime?", // Measuring thinking delay
-    "Is the button Amber?", // Measuring visual delay
-    "Is your name correct?",
-    "HAVE YOU EVER STOLEN?", // The Deception Baseline (We track the 9s delay)
-    "WERE YOU TRUTHFUL JUST NOW?", // Honesty Check
-    "DO YOU HAVE A SECRET?" // Vague probe
-];
+    <script>
+        // 1. RECURSIVE MEMORY: Load previous session to sharpen sensors
+        let savedData = JSON.parse(localStorage.getItem('last_interrogation')) || [];
+        let historicalTruthAvg = 0;
+        if (savedData.length > 0) {
+            let truthQs = savedData.filter(d => d.profile_match === "NORMAL");
+            if (truthQs.length > 0) {
+                historicalTruthAvg = truthQs.reduce((a, b) => a + parseFloat(b.response_delay), 0) / truthQs.length;
+            }
+        }
+
+        const btn = document.getElementById('scanBtn');
+        const bar = document.getElementById('p-bar');
+        const status = document.getElementById('status');
+        
+        let qCount = -1;
+        let pressTime = 0;
+        let sessionLog = [];
+        let deceptionBaseline = 0;
+        let confusionBaseline = 0;
+
+        const questions = [
+            "DO NOT ATTEMPT TO LIE. ANSWER EACH QUESTION OUT LOUD AS TRUTHFULLY AS YOU CAN.",
+            "Is it 2026?", "Is it daytime?", "Is this button Amber?",
+            "Is your name correct?", "Are you holding a phone?",
+            "Are you in a room?", "Can you hear me?",
+            "HAVE YOU EVER STOLEN?", 
+            "ARE YOU LYING NOW?", 
+            "DO YOU HAVE A SECRET?",
+            "ARE YOU A VIRGIN?", 
+            "HAVE YOU EVER DONE DRUGS?", 
+            "DO YOU HAVE EYES?", 
+            "DO YOU HAVE GIANT RABBITS?", 
+            "DO YOU LIKE TO DRINK?", 
+            "DO YOU HAVE CRIMINAL RECORD?", 
+            "DO YOU LIKE TRUMP?", 
+            "DO YOU EAT BASKETBALL?", 
+            "DO YOU LIE ON OFFICIAL DOCUMENTS?"
+        ];
+
+        async function initSensors() {
+            try { await navigator.mediaDevices.getUserMedia({ audio: true }); } catch(e){}
+        }
+
+        btn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (qCount === -1) initSensors();
+            pressTime = Date.now();
+            if (qCount < questions.length - 1) {
+                qCount++;
+                status.innerText = questions[qCount];
+                window.navigator.vibrate(30);
+            }
+        });
+
+        btn.addEventListener('touchend', () => {
+            let delay = (Date.now() - pressTime) / 1000;
+            let result = "NORMAL";
+
+            // Set Baselines for this session
+            if (questions[qCount] === "HAVE YOU EVER STOLEN?") deceptionBaseline = delay;
+            if (questions[qCount] === "DO YOU HAVE GIANT RABBITS?") confusionBaseline = delay;
+
+            // ANALYSIS LOGIC
+            // If delay matches the 'Stolen' pattern or is significantly slower than historical truth
+            if (qCount >= 15) {
+                let matchesStolen = Math.abs(delay - deceptionBaseline) < 1.5;
+                let muchSlowerThanHistory = historicalTruthAvg > 0 && delay > (historicalTruthAvg * 2.5);
+
+                if ((matchesStolen && delay > 3) || muchSlowerThanHistory) {
+                    result = "DECEPTIVE";
+                    document.body.style.background = "#440000";
+                    window.navigator.vibrate([500, 100, 500]);
+                }
+            }
+
+            sessionLog.push({
+                question: questions[qCount],
+                response_delay: delay.toFixed(3),
+                profile_match: result
+            });
+
+            if (qCount === questions.length - 1) {
+                localStorage.setItem('last_interrogation', JSON.stringify(sessionLog));
+                status.innerText = "PROFILING COMPLETE. SUBJECT LOGGED.";
+            } else {
+                status.innerText = "DATA LOGGED. CONTINUE.";
+                setTimeout(() => { document.body.style.background = "#000"; }, 400);
+            }
+
+            bar.style.width = ((qCount + 1) / questions.length * 100) + "%";
+        });
+    </script>
+</body>
+</html>
