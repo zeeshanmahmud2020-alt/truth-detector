@@ -6,24 +6,18 @@
     <title>Expert Truth Detector</title>
     <style>
         body { background: #000; color: #ffbf00; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; transition: background 0.5s; }
-        
         #p-wrap { width: 80%; height: 6px; background: #222; border-radius: 10px; margin-bottom: 30px; overflow: hidden; }
         #p-bar { width: 0%; height: 100%; background: #ffbf00; box-shadow: 0 0 15px #ffbf00; transition: 0.4s; }
-
         #status { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 40px; text-align: center; min-height: 60px; padding: 0 20px; line-height: 1.4; }
-
         .amber-btn {
             width: 85%; height: 85px; background: #111; color: #ffbf00; border: 3px solid #ffbf00;
             border-radius: 20px; font-size: 1.3rem; font-weight: 900;
             box-shadow: 0 0 5px rgba(255,191,0,0.2); transition: all 0.1s;
             -webkit-tap-highlight-color: transparent; outline: none; opacity: 0.3; pointer-events: none;
         }
-
         .amber-btn.active-ready { opacity: 1; pointer-events: auto; }
-
         .amber-btn:active {
-            transform: scale(0.96);
-            background: #221a00;
+            transform: scale(0.96); background: #221a00;
             box-shadow: 0 0 50px #ffbf00, inset 0 0 20px #ffbf00;
         }
     </style>
@@ -38,7 +32,8 @@
         const btn = document.getElementById('scanBtn');
         const bar = document.getElementById('p-bar');
         const status = document.getElementById('status');
-        
+        const alarmSound = new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg');
+
         const introPhrases = [
             "DO NOT ATTEMPT TO LIE...",
             "I AM AN EXPERT AT DETECTING HUMAN LIES.",
@@ -55,11 +50,10 @@
         let qCount = 0;
         let introIdx = 0;
 
-        // --- 1. THE SCARY INTRO ---
         function runIntro() {
             if (introIdx < introPhrases.length) {
                 status.innerText = introPhrases[introIdx];
-                window.navigator.vibrate([100, 50, 100]); // Heartbeat thump
+                window.navigator.vibrate([100, 50, 100]); 
                 introIdx++;
                 setTimeout(runIntro, 3500);
             } else {
@@ -68,10 +62,8 @@
             }
         }
 
-        // Start intro on load
         window.onload = runIntro;
 
-        // --- 2. THE INTERROGATION ---
         btn.addEventListener('touchstart', (e) => {
             e.preventDefault();
             if (qCount < questions.length) {
@@ -87,15 +79,26 @@
             if (qCount === 10) {
                 status.innerText = "ANALYZING FINAL TRUTH...";
                 btn.style.display = "none";
-                setTimeout(() => {
-                    document.body.style.background = "#550000"; // Scary Red-Amber
-                    window.navigator.vibrate([500, 100, 500, 100, 800]);
-                    status.innerText = "LIAR DETECTED!";
-                }, 3000);
+                setTimeout(triggerLiarAlarm, 3000);
             } else {
                 status.innerText = "RELEASED. PREPARE FOR NEXT.";
             }
         });
+
+        function triggerLiarAlarm() {
+            alarmSound.play();
+            status.innerText = "LIAR DETECTED!";
+            let strobeCount = 0;
+            const strobe = setInterval(() => {
+                document.body.style.background = (strobeCount % 2 === 0) ? "#FFBF00" : "#550000";
+                window.navigator.vibrate(200);
+                strobeCount++;
+                if (strobeCount > 10) {
+                    clearInterval(strobe);
+                    document.body.style.background = "#550000";
+                }
+            }, 150);
+        }
     </script>
 </body>
 </html>
