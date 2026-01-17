@@ -40,13 +40,19 @@
             "MEASURING BASELINE BIOMETRICS..."
         ];
 
-        const questions = [
-            "Is it 2026?", "Are you holding a phone?", "Is the sky blue?",
-            "Do you like pizza?", "Are you tired?", "Is it cold?",
-            "Do you like music?", "Is your name correct?", 
-            "ARE YOU HIDING SOMETHING?", "DID YOU JUST LIE?"
+       const questions = [
+            "Is it 2026?", "Is the sky blue?", "Are you holding a phone?", // Baseline
+            "Do you like music?", "Is your name correct?", "Are you tired?",
+            "Is it daytime?", "Is the button Amber?", "Are you human?",
+            "HAVE YOU EVER STOLEN?", // First "Check"
+            // Intensity Level 2 (11-30)
+            "Have you ever lied to a teacher?", "Is there a secret in your pocket?",
+            "Do you trust me?", "Are you hiding your true feelings?",
+            "Have you ever broken a promise?", "Is your heart beating faster?",
+            "Are you sweating?", "Did you lie about your age before?",
+            // ... (Add more up to 50)
+            "DO YOU REGRET WHAT YOU DID?" // Final Wild Card
         ];
-
         let qCount = 0;
         let introIdx = 0;
 
@@ -72,16 +78,25 @@
             }
         });
 
-        btn.addEventListener('touchend', () => {
+       btn.addEventListener('touchend', () => {
             qCount++;
-            bar.style.width = (qCount * 10) + "%";
             
-            if (qCount === 10) {
-                status.innerText = "ANALYZING FINAL TRUTH...";
-                btn.style.display = "none";
-                setTimeout(triggerLiarAlarm, 3000);
+            // Progress bar stays full after 10 but starts "vibrating"
+            bar.style.width = Math.min((qCount * 10), 100) + "%";
+            if (qCount > 10) bar.style.boxShadow = "0 0 30px #ff0000";
+
+            // The "Liar" Trigger Logic
+            // After 10, it has a 20% chance to trigger "LIAR" on every tap
+            // Or you can trigger it specifically at 30 or 50.
+            let randomStress = Math.random();
+            
+            if (qCount >= 50 || (qCount > 10 && randomStress > 0.85)) {
+                triggerLiarAlarm();
             } else {
-                status.innerText = "RELEASED. PREPARE FOR NEXT.";
+                status.innerText = "NEXT QUESTION PREPARING...";
+                setTimeout(() => {
+                    status.innerText = questions[qCount] || "KEEP HOLDING. I AM WATCHING.";
+                }, 500);
             }
         });
 
