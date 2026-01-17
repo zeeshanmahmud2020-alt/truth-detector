@@ -1,87 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Precision Interrogator</title>
-    <style>
-        body { background: #000; color: #ffbf00; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
-        #p-wrap { width: 90%; height: 4px; background: #222; margin-bottom: 20px; }
-        #p-bar { width: 0%; height: 100%; background: #ffbf00; box-shadow: 0 0 15px #ffbf00; transition: 0.3s; }
-        #status { font-size: 0.9rem; text-align: center; height: 100px; padding: 0 20px; text-transform: uppercase; }
-        .amber-btn {
-            width: 260px; height: 260px; background: #000; border: 2px solid #ffbf00; border-radius: 50%;
-            color: #ffbf00; font-weight: 900; font-size: 1.1rem; transition: 0.2s;
-            box-shadow: 0 0 10px rgba(255,191,0,0.1); outline: none; -webkit-tap-highlight-color: transparent;
+let startTime = 0;
+let honestScore = 0;
+let delayProfile = { truth: 0, lie: 0 };
+
+// The "Mix" Module: Delay + Voice + Tremor
+function processResponse(vocalPitch, currentTremor) {
+    let responseDelay = (Date.now() - startTime) / 1000; // Time in seconds
+    
+    if (qCount <= 8) {
+        // Build the "Honesty Profile"
+        delayProfile.truth += responseDelay / 8; 
+    } else {
+        // Apply your logic: Check for significant deviation from the baseline delay
+        let delayDeviation = responseDelay / delayProfile.truth;
+
+        if (delayDeviation > 2.5) { // If they take 2.5x longer than usual
+            analyzeDeepDeception(responseDelay, vocalPitch);
         }
-        .amber-btn:active { box-shadow: 0 0 50px #ffbf00, inset 0 0 20px #ffbf00; transform: scale(0.97); }
-    </style>
-</head>
-<body>
-    <div id="p-wrap"><div id="p-bar"></div></div>
-    <div id="status">SENSORS STANDING BY...</div>
-    <button id="scanBtn" class="amber-btn">HOLD THUMB<br>TO CALIBRATE</button>
+    }
+}
 
-    <script>
-        const btn = document.getElementById('scanBtn');
-        const bar = document.getElementById('p-bar');
-        const status = document.getElementById('status');
-        
-        let qCount = 0;
-        let isAnalysing = false;
-        let baselineTremor = 0;
-        let tremorSamples = [];
-        
-        // 50 Question Engine
-        const questions = [
-            "Is it 2026?", "Are you human?", "Is the sky blue?", "Are you holding a phone?",
-            "Is it daytime?", "Is this button amber?", "Are you in a room?", "Can you hear me?",
-            "HAVE YOU EVER STOLEN?", "ARE YOU LYING NOW?", "DO YOU HAVE A SECRET?",
-            // ... (The app will cycle through the logic up to 50)
-        ];
-
-        // START SENSORS
-        async function initSensors() {
-            // Tremor Detection (Accelerometer)
-            window.addEventListener('devicemotion', (event) => {
-                if (!isAnalysing) return;
-                
-                let acc = event.accelerationIncludingGravity;
-                let magnitude = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
-                
-                if (qCount <= 8) {
-                    tremorSamples.push(magnitude);
-                    baselineTremor = tremorSamples.reduce((a,b)=>a+b)/tremorSamples.length;
-                } else {
-                    // Hairline Breath Precision: 15% tremor increase triggers alarm
-                    if (magnitude > baselineTremor * 1.15) triggerAlarm();
-                }
-            });
-        }
-
-        btn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (qCount === 0) initSensors();
-            isAnalysing = true;
-            status.innerText = questions[qCount] || "INTENSITY INCREASING... HOLD STEADY.";
-            window.navigator.vibrate(20);
-        });
-
-        btn.addEventListener('touchend', () => {
-            isAnalysing = false;
-            qCount++;
-            bar.style.width = (qCount * 2) + "%";
-            status.innerText = "SENSORS UPDATED. RELEASE.";
-            if (qCount > 50) status.innerText = "SUBJECT PASSED INTERROGATION.";
-        });
-
-        function triggerAlarm() {
-            document.body.style.background = "#440000";
-            status.innerText = "BIOMETRIC ANOMALY: TREMOR DETECTED";
-            window.navigator.vibrate([400, 100, 400]);
-            const alarm = new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg');
-            alarm.play();
-        }
-    </script>
-</body>
-</html>
+// Logic for your specific questions
+const questions = [
+    "Is it daytime?", // Measuring thinking delay
+    "Is the button Amber?", // Measuring visual delay
+    "Is your name correct?",
+    "HAVE YOU EVER STOLEN?", // The Deception Baseline (We track the 9s delay)
+    "WERE YOU TRUTHFUL JUST NOW?", // Honesty Check
+    "DO YOU HAVE A SECRET?" // Vague probe
+];
