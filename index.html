@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { background: #000; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; transition: background 0.3s; }
+        
+        #status { position: absolute; top: 20%; font-size: 1.2rem; color: #ffbf00; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px #ffbf00; }
+
+        .amber-btn {
+            width: 80%; height: 70px; background: #1a1a1a; color: #ffbf00; 
+            border: 3px solid #ffbf00; border-radius: 15px; font-size: 1.2rem; font-weight: bold;
+            box-shadow: 0 5px 0 #997300, 0 0 10px rgba(255, 191, 0, 0.3);
+            transition: all 0.1s ease; outline: none; -webkit-tap-highlight-color: transparent;
+        }
+
+        .amber-btn:active {
+            transform: translateY(4px) scale(0.98);
+            box-shadow: 0 0 40px #ffbf00, inset 0 0 20px #ffbf00;
+            background: #332600;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="status">WATCHING...</div>
+    <button id="scanBtn" class="amber-btn">HOLD TO TEST TRUTH</button>
+
+    <script>
+        const btn = document.getElementById('scanBtn');
+        const status = document.getElementById('status');
+        const popSound = new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3'); // Temporary juicy sound
+
+        btn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            popSound.play();
+            window.navigator.vibrate(40);
+            status.innerText = "ANALYZING VOICE...";
+            startVoiceAnalysis();
+        });
+
+        btn.addEventListener('touchend', () => {
+            status.innerText = "WATCHING...";
+            document.body.style.background = "#000";
+        });
+
+        function startVoiceAnalysis() {
+            // Audio Context for the "Scary" detection
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const analyser = audioCtx.createAnalyser();
+
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                const source = audioCtx.createMediaStreamSource(stream);
+                source.connect(analyser);
+                
+                function check() {
+                    let data = new Uint8Array(analyser.frequencyBinCount);
+                    analyser.getByteFrequencyData(data);
+                    // Check for high-pitch stress spikes
+                    if (data[800] > 180) { 
+                        document.body.style.background = "#442200"; // Deep Amber Alert
+                        window.navigator.vibrate([50, 50, 50]);
+                        status.innerText = "STRESS DETECTED";
+                    }
+                    requestAnimationFrame(check);
+                }
+                check();
+            }).catch(err => {
+                status.innerText = "MIC ACCESS NEEDED";
+            });
+        }
+    </script>
+</body>
+</html>
